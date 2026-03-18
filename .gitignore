@@ -1,0 +1,20 @@
+# Chặn thư mục môi trường ảo 
+qa_env/
+venv/
+.env/
+
+# Chặn dữ liệu và model nặng
+my_finetuned_vimmrc/
+processed_dataset/
+xlm-roberta-base-squad2/
+results/
+corpus.json
+tokenized_corpus.json
+# Chặn file tạm và rác Python
+__pycache__/
+*.pyc
+*.pkl
+*.bin
+*.dll
+*.pyd
+*.dist-info/
