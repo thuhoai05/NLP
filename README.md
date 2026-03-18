@@ -21,46 +21,16 @@ qa_env\Scripts\activate
 Install dependencies
 
 pip install -r requirements.txt
+Chạy các file theo thứ tự đánh số dưới đây:
 
-1️⃣ Bước 1: Phân tích dữ liệu (EDA)
-File: eda.py
+1️⃣ eda.py: Phân tích thống kê tập dữ liệu (độ dài câu, phân bố nhãn) để có cái nhìn tổng quan trước khi huấn luyện.
 
-Mục đích: Xem dữ liệu trông như thế nào, dài ngắn ra sao để viết báo cáo.
+2️⃣ preprocess_for_training.py: Làm sạch văn bản, xử lý các dấu câu tiếng Việt và chuyển đổi sang dạng Token ID cho mô hình.
 
-Lệnh: python eda.py
+3️⃣ train.py: Thực hiện quá trình Fine-tuning mô hình XLM-RoBERTa trên bộ dữ liệu ViSpanExtractQA.
 
-Kết quả: Hiện biểu đồ phân bố độ dài câu hỏi/đoạn văn.
+4️⃣ build_index.py: Tạo bộ chỉ mục (Index) cho retriever. File này sẽ tạo ra bm25_index.pkl để hệ thống không phải load lại toàn bộ dữ liệu thô mỗi khi chạy.
 
-2️⃣ Bước 2: Tiền xử lý dữ liệu (Preprocessing)
-File: preprocess_for_training.py
+5️⃣ evaluate_final.py: Chạy đánh giá trên tập test để xuất các chỉ số Accuracy, F1-score và Exact Match (EM).
 
-Mục đích: Chuyển văn bản thô thành dạng "số" (Token ID) để AI hiểu được.
-
-Lệnh: python preprocess_for_training.py
-
-Kết quả: Tạo ra thư mục processed_dataset/. (Bắt buộc phải có thư mục này mới chạy được bước 3).
-
-3️⃣ Bước 3: Huấn luyện mô hình (Fine-tuning)
-File: train.py
-
-Mục đích: Dạy cho mô hình XLM-RoBERTa cách trả lời câu hỏi tiếng Việt dựa trên bộ dữ liệu của bạn.
-
-Lệnh: python train.py
-
-Kết quả: Tạo ra thư mục "bộ não" my_finetuned_vimmrc/. (Đây là file quan trọng nhất để Chatbot hoạt động thông minh).
-
-4️⃣ Bước 4: Xây dựng bộ tìm kiếm (Indexing)
-File: build_index.py
-
-Mục đích: Tạo "mục lục" cho toàn bộ các đoạn văn bản để khi hỏi, máy tìm kiếm nhanh hơn.
-
-Lệnh: python build_index.py
-
-Kết quả: Tạo ra file bm25_index.pkl. (Thiếu file này Chatbot sẽ báo lỗi không tìm thấy tài liệu).
-
-5️⃣ Bước 5: Đánh giá & Sử dụng (Evaluation & Chat)
-Đây là lúc bạn thu hoạch thành quả:
-
-Đánh giá lấy số liệu nộp bài: python evaluate_final.py (Để lấy điểm F1/EM).
-
-Mở Chatbot đi demo: python chatbot.py (Để hỏi đáp trực tiếp).
+6️⃣ chatbot.py: Giao diện dòng lệnh (CLI) để tương tác trực tiếp với hệ thống.
