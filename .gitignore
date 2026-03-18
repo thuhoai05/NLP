@@ -18,3 +18,10 @@ __pycache__/
 *.dll
 *.pyd
 *.dist-info/
+*.log
+*.pt
+*.bin
+*.models*.log
+*.pt
+*.bin
+*.model

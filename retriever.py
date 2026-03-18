@@ -11,7 +11,12 @@ def preprocess_text(text):
     return tokenized_text.split()
 
 print("Loading BM25 index...")
-with open("bm25_index.pkl", "rb") as f:
+import os
+
+BASE_DIR = os.path.dirname(__file__)
+index_path = os.path.join(BASE_DIR, "bm25_index.pkl")
+
+with open(index_path, "rb") as f:
     bm25, corpus = pickle.load(f)
 print("BM25 ready!")
 

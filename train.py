@@ -12,7 +12,7 @@ print(f"🚀 Đang chạy trên: {device.upper()}")
 print("📂 Loading dataset...")
 tokenized_dataset = load_from_disk("processed_dataset")
 # Lấy một lượng nhỏ để train nhanh và tránh tràn RAM
-train_sub = tokenized_dataset["train"].select(range(50))
+train_sub = tokenized_dataset["train"].select(range(2000))
 
 # 3. Load model + tokenizer
 model_name = "nguyenvulebinh/vi-mrc-large"
