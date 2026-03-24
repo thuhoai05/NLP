@@ -1,28 +1,30 @@
-from transformers import AutoTokenizer, AutoModelForQuestionAnswering
 import torch
-model_name = "./my_finetuned_vimmrc"
-tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=False)
-model = AutoModelForQuestionAnswering.from_pretrained(model_name)
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 
-def answer_question(question, context):
-    # Bây giờ hàm này sẽ hiểu 'tokenizer' và 'model' là gì
-    inputs = tokenizer(question, context, return_tensors="pt", truncation=True, max_length=512)
-    
+device = "cuda" if torch.cuda.is_available() else "cpu"
+tokenizer = AutoTokenizer.from_pretrained("./vit5_qa", use_fast=False)
+model = AutoModelForSeq2SeqLM.from_pretrained("./vit5_qa")
+print(f"📦 Đang tải mô hình Generative (ViT5) lên {device}...")
+
+
+def answer_question(question, context): # Đổi contexts thành context
+    # ✅ KHÔNG DÙNG JOIN NỮA
+    input_text = f"question: {question} context: {context}"
+
+    inputs = tokenizer(
+        input_text,
+        return_tensors="pt",
+        max_length=512,
+        truncation=True
+    ).to(device)
+
     with torch.no_grad():
-        outputs = model(**inputs)
+        outputs = model.generate(
+            inputs.input_ids,
+            max_length=64, # Cho nó dài thêm chút, 32 hơi ngắn
+            num_beams=4,   # Đổi thành 4 cho nhanh mà vẫn mượt
+            early_stopping=True
+        )
 
-    start_probs = torch.softmax(outputs.start_logits, dim=1)
-    end_probs = torch.softmax(outputs.end_logits, dim=1)
-
-    start_idx = torch.argmax(start_probs)
-    end_idx = torch.argmax(end_probs) + 1
-    
-    confidence = (torch.max(start_probs) + torch.max(end_probs)).item() / 2
-
-    answer = tokenizer.decode(inputs["input_ids"][0][start_idx:end_idx], skip_special_tokens=True)
-    answer = answer.strip()
-
-    if confidence < 0.25 or not answer:
-        return None, 0
-        
-    return answer, confidence
+    answer = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    return answer.strip(), 1.0

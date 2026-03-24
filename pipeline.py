@@ -2,23 +2,21 @@ from retriever import retrieve
 from reader import answer_question
 
 def pipeline(question):
-    # Bước 1: Retriever tìm các đoạn văn liên quan nhất
-    print(f"🔍 Đang tìm kiếm tài liệu cho câu hỏi: {question}")
-    candidate_contexts = retrieve(question, top_k=3) # Lấy top 3 đoạn văn
+    print(f"🔍 Đang truy vấn dữ liệu...")
+    candidate_contexts = retrieve(question, top_k=3) # Top 3 là tối ưu nhất cho pipeline
     
     best_answer = None
     max_confidence = -1
+    best_context=""
 
-    # Bước 2: Reader đọc từng đoạn văn và tìm câu trả lời
-    for i, context in enumerate(candidate_contexts):
+    for context in candidate_contexts:
         ans, conf = answer_question(question, context)
-        print(f"  - Thử đoạn văn {i+1} (Độ tin cậy: {conf:.2f}): {ans}")
-        
         if conf > max_confidence:
             max_confidence = conf
             best_answer = ans
+            best_context = context
 
-    return best_answer, max_confidence
+    return best_answer, max_confidence, best_context
 
 # TEST HỆ THỐNG
 if __name__ == "__main__":

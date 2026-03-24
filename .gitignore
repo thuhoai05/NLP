@@ -8,8 +8,15 @@ my_finetuned_vimmrc/
 processed_dataset/
 xlm-roberta-base-squad2/
 results/
+vit5_qa/
+vi-mrc-base/
+bm25_index.pkl
 corpus.json
 tokenized_corpus.json
+my_generative_model/
+vit5_tokenizer/
+generative/
+processed_data_generative/
 # Chặn file tạm và rác Python
 __pycache__/
 *.pyc
@@ -25,3 +32,8 @@ __pycache__/
 *.pt
 *.bin
 *.model
+.ipynb_checkpoints/
+*.arrow
+*.zip
+*.json
+*.safetensors

@@ -1,66 +1,67 @@
 from datasets import load_dataset
-from transformers import AutoTokenizer
-import re
+from transformers import T5Tokenizer
+import os
 
-# 1. ĐỒNG NHẤT MODEL (Dùng vi-mrc-large như đã định)
-model_checkpoint = "nguyenvulebinh/vi-mrc-large"
-tokenizer = AutoTokenizer.from_pretrained(model_checkpoint, use_fast=False)
-max_length = 384
+# SỬA Ở ĐÂY: Trỏ trực tiếp vào thư mục chứa 2 file bạn vừa tải
+model_checkpoint = "./vit5_tokenizer"
 
-def clean_text(text):
-    if text is None: return ""
-    text = text.strip()
-    text = re.sub(r"\s+", " ", text)
-    return text
+try:
+    # Load từ local để tránh lỗi cache hệ thống
+    tokenizer = T5Tokenizer.from_pretrained(
+        model_checkpoint, 
+        use_fast=False,
+        legacy=False
+    )
+    print("✅ CỰC KỲ TUYỆT VỜI! Tokenizer đã load thành công từ local.")
+except Exception as e:
+    print(f"❌ Lỗi cực nặng: {e}")
+    print("Vui lòng đảm bảo bạn đã để file spiece.model vào thư mục vit5_tokenizer")
+    exit()
 
-def preprocess(example):
-    question = clean_text(example["question"])
-    context = clean_text(example["context"])
-    answer = clean_text(example["answer_text"])
+max_input_length = 256
+max_target_length = 64
+
+def preprocess_function(examples):
+    inputs = [
+        f"question: {q} context: {c}"
+        for q, c in zip(examples["question"], examples["context"])
+    ]
     
-    # Tokenize câu hỏi và ngữ cảnh
-    inputs = tokenizer(
-        question,
-        context,
-        max_length=max_length,
-        truncation="only_second", # Chỉ cắt context, giữ nguyên question
-        padding="max_length",
-        return_offsets_mapping=True
+    # ✅ FIX CHUẨN
+    targets = [
+        ans if ans and len(ans.strip()) > 0 else ""
+        for ans in examples["answer_text"]
+    ]
+
+    model_inputs = tokenizer(
+        inputs,
+        max_length=256,
+        truncation=True,
+        padding="max_length"
     )
 
-    offsets = inputs["offset_mapping"]
-    start_char = context.find(answer)
-    end_char = start_char + len(answer)
+    labels = tokenizer(
+        text_target=targets,
+        max_length=64,
+        truncation=True,
+        padding="max_length"
+    )
 
-    # Mặc định nếu không tìm thấy là vị trí 0
-    start_token_idx = 0
-    end_token_idx = 0
-
-    # Nếu tìm thấy đáp án trong context và không bị cắt mất do quá dài
-    if start_char != -1:
-        # Tìm token bắt đầu
-        token_start_index = 0
-        while token_start_index < len(offsets) and offsets[token_start_index][0] <= start_char:
-            token_start_index += 1
-        start_token_idx = token_start_index - 1
-
-        # Tìm token kết thúc
-        token_end_index = len(offsets) - 1
-        while token_end_index >= 0 and offsets[token_end_index][1] >= end_char:
-            token_end_index -= 1
-        end_token_idx = token_end_index + 1
-
-    inputs["start_positions"] = start_token_idx
-    inputs["end_positions"] = end_token_idx
-
-    # Xóa offset_mapping vì mô hình không nhận đầu vào này khi train
-    inputs.pop("offset_mapping")
-    return inputs
-
-# --- CHẠY TIỀN XỬ LÝ ---
+    model_inputs["labels"] = labels["input_ids"]
+    return model_inputs
+# Load dataset
+print("📡 Đang tải dataset từ Hugging Face...")
 dataset = load_dataset("ntphuc149/ViSpanExtractQA")
-tokenized_dataset = dataset.map(preprocess, batched=False) # Chạy từng mẫu để chính xác
 
-# Lưu lại
-tokenized_dataset.save_to_disk("processed_dataset")
-print("✅ Tiền xử lý hoàn tất với Tokenizer chuẩn!")
+# Map dữ liệu
+tokenized_datasets = dataset.map(
+    preprocess_function, 
+    batched=True, 
+    remove_columns=dataset["train"].column_names,
+    desc="Đang xử lý dữ liệu cho ViT5..."
+)
+
+# Lưu dữ liệu
+tokenized_datasets.save_to_disk("generative")
+print("\n✅ Cuối cùng thì mọi thứ cũng xong! Bạn có thể chuyển sang bước Train.")
+
