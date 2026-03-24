@@ -1,78 +1,121 @@
-# Vietnamese Question Answering System
+🧠 Hệ thống Hỏi Đáp Tiếng Việt (BERT vs ViT5)
+📌 Tổng quan
 
-Project: Automatic Question Answering for Vietnamese
+Dự án này xây dựng một hệ thống Question Answering (QA) cho tiếng Việt với hai hướng tiếp cận:
 
-Pipeline:
-Retriever: BM25
-Reader: BERT / PhoBERT
+🔍 Extractive QA sử dụng BERT (trích xuất câu trả lời từ context)
+✨ Generative QA sử dụng ViT5 (sinh câu trả lời)
 
-Dataset: ViSpanExtractQA
+Mục tiêu là:
 
-## Setup
+So sánh hiệu năng giữa 2 mô hình
+Đánh giá khả năng tổng quát hóa
+Phân tích ưu/nhược điểm của từng phương pháp
+🎯 Mục tiêu
+Xây dựng pipeline QA hoàn chỉnh
+Huấn luyện và đánh giá 2 loại mô hình
+So sánh bằng các chỉ số:
+Exact Match (EM)
+F1 Score
+Phân tích lỗi và khả năng generalization
+🧱 Cấu trúc thư mục
+### 1. Thành phần lõi (Core)
+- `app.py`: File chạy chính, khởi tạo giao diện Web.
+- `retriever.py`: Module tìm kiếm và truy xuất thông tin bằng BM25.
+- `reader_extractive.py`: Sử dụng mô hình `vi-mrc-base` để tìm câu trả lời trực tiếp từ văn bản.
+- `reader.py`: Sử dụng mô hình `ViT5` để tổng hợp và sinh câu trả lời hoàn chỉnh.
 
-Create environment
-
+### 2. Xử lý dữ liệu (Data & Training)
+- `clean_data.py`: Làm sạch `knowledge_base.txt`, loại bỏ rác và chuẩn hóa tiếng Việt.
+- `preprocess_for_training.py`: Chuẩn bị tập dữ liệu huấn luyện từ Hugging Face cho ViT5.
+- `reindex.py`: Cập nhật bộ nhớ tìm kiếm khi thay đổi dữ liệu tri thức.
+- `train_bert.py` & `train_vit5.py`: Code dùng để huấn luyện/Fine-tune các mô hình.
+- `evaluate_final.py`: Đánh giá hiệu năng mô hình qua chỉ số EM và F1.
+⚙️ Cài đặt
+1. Clone repo
+git clone https://github.com/thuhoai05/NLP.git
+cd NLP
+2. Tạo môi trường
 python -m venv qa_env
-
-Activate environment
-
-qa_env\Scripts\activate
-
-Install dependencies
-
+qa_env\Scripts\activate   # Windows
+3. Cài thư viện
 pip install -r requirements.txt
+📊 Dataset
+Dataset QA tiếng Việt
+Format:
+{
+  "question": "...",
+  "context": "...",
+  "answer_text": "..."
+}
+Sử dụng:
+Train: ~3000 mẫu
+Test: 200 → 5000 mẫu
 
-1️⃣ Bước 1: Phân tích dữ liệu (EDA)
-File: eda.py
+⚠️ Lưu ý: tập train nhỏ → dễ overfitting
 
-Mục đích: Xem dữ liệu trông như thế nào, dài ngắn ra sao để viết báo cáo.
+🏋️ Huấn luyện
+🔹 Bước 1: Preprocess
+python preprocess_for_training.py
+🔹 Bước 2: Train ViT5
+python train_vit5.py
+🧪 Đánh giá
 
-Lệnh: python eda.py
+Chạy:
 
-Kết quả: Hiện biểu đồ phân bố độ dài câu hỏi/đoạn văn.
+python evaluate_final.py
+Metrics:
+Exact Match (EM): trùng khớp chính xác
+F1 Score: đo độ tương đồng
 
-2️⃣ Bước 2: Tiền xử lý dữ liệu (Preprocessing)
-File: preprocess_for_training.py
+📈 Kết quả
+🔹 Test trên 200 mẫu
+Mô hình	EM	F1
+BERT	80.50%	86.56%
+ViT5	70.00%	79.99%
+🔹 Test trên 5000 mẫu
+Mô hình	EM	F1
+BERT	46.06%	66.40%
+ViT5	29.64%	53.72%
 
-Mục đích: Chuyển văn bản thô thành dạng "số" (Token ID) để AI hiểu được.
+📊 Phân tích
+🔥 Nhận xét chính
+Hiệu năng giảm mạnh khi tăng test size (200 → 5000)
+→ cho thấy mô hình overfitting do dữ liệu train ít
+⚖️ So sánh BERT vs ViT5
+Tiêu chí	BERT	ViT5
+Loại	Extractive	Generative
+Ưu điểm	Chính xác cao	Linh hoạt
+Nhược điểm	Không sinh được	Khó train
 
-Lệnh: python preprocess_for_training.py
+👉 BERT tốt hơn vì:
 
-Kết quả: Tạo ra thư mục processed_dataset/. (Bắt buộc phải có thư mục này mới chạy được bước 3).
+câu trả lời thường nằm sẵn trong context
 
-3️⃣ Bước 3: Huấn luyện mô hình (Fine-tuning)
-File: train.py
+👉 ViT5 kém hơn vì:
 
-Mục đích: Dạy cho mô hình XLM-RoBERTa cách trả lời câu hỏi tiếng Việt dựa trên bộ dữ liệu của bạn.
+sinh lại câu → dễ lệch so với ground truth
+❗ Phân tích lỗi
+Ví dụ:
+Question	Ground Truth	Prediction
+Ai là chủ tịch FLC?	Trịnh Văn Quyết	Ông Trịnh Văn Quyết
 
-Lệnh: python train.py
+👉 EM = 0 nhưng F1 cao
+→ do khác biểu diễn nhưng đúng nội dung
 
-Kết quả: Tạo ra thư mục "bộ não" my_finetuned_vimmrc/. (Đây là file quan trọng nhất để Chatbot hoạt động thông minh).
-
-4️⃣ Bước 4: Xây dựng bộ tìm kiếm (Indexing)
-File: build_index.py
-
-Mục đích: Tạo "mục lục" cho toàn bộ các đoạn văn bản để khi hỏi, máy tìm kiếm nhanh hơn.
-
-Lệnh: python build_index.py
-
-Kết quả: Tạo ra file bm25_index.pkl. (Thiếu file này Chatbot sẽ báo lỗi không tìm thấy tài liệu).
-
-5️⃣ Bước 5: Đánh giá & Sử dụng (Evaluation & Chat)
-Đây là lúc bạn thu hoạch thành quả:
-
-Đánh giá lấy số liệu nộp bài: python evaluate_final.py (Để lấy điểm F1/EM).
-
-Mở Chatbot đi demo: python chatbot.py (Để hỏi đáp trực tiếp).
-## 🧠 Architecture
-
-User Question → BM25 Retriever → Top-k Context → QA Model → Answer
-
-## 🚀 Demo
-
-python app.py
-
-## 📊 Evaluation
-
-- Exact Match: XX%
-- F1 Score: XX%
+⚠️ Hạn chế
+Dataset nhỏ (~3000 mẫu)
+Context bị cắt (max 512 tokens)
+Generative model khó tối ưu hơn
+Evaluation phụ thuộc string matching
+🚀 Hướng phát triển
+Tăng dữ liệu huấn luyện
+Tăng số epoch
+Dùng model lớn hơn (mT5)
+Cải thiện evaluation (semantic similarity)
+🧠 Công nghệ sử dụng
+Python
+PyTorch
+HuggingFace Transformers
+BERT
+ViT5
