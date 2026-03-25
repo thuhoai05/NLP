@@ -31,6 +31,44 @@ Phân tích lỗi và khả năng generalization
 - `reindex.py`: Cập nhật bộ nhớ tìm kiếm khi thay đổi dữ liệu tri thức.
 - `train_bert.py` & `train_vit5.py`: Code dùng để huấn luyện/Fine-tune các mô hình.
 - `evaluate_final.py`: Đánh giá hiệu năng mô hình qua chỉ số EM và F1.
+
+-Chạy các file theo tuần tự như sau:
+Giai đoạn 1: Chuẩn bị cơ sở tri thức (Knowledge Base)
+Đây là bước nạp dữ liệu vào để chatbot có nội dung trả lời.
+
+clean_data.py: Chạy file này đầu tiên để làm sạch file knowledge_base.txt. Nó sẽ loại bỏ các ký tự rác và chuẩn hóa văn bản.
+
+build_index.py: Sau khi dữ liệu sạch, chạy file này để tạo chỉ mục tìm kiếm (thường là file bm25_index.pkl). Đây là "bản đồ" giúp máy tính tìm đoạn văn chứa câu trả lời nhanh hơn.
+
+Giai đoạn 2: Huấn luyện & Đánh giá mô hình (AI Training)
+Vì bạn đang thực hiện so sánh giữa 2 hướng tiếp cận: Extractive (Trích xuất - BERT) và Generative (Sinh văn bản - ViT5).
+
+1. Hướng BERT (Extractive)
+preprocess_for_training(bert).py: Chạy file này để tạo thư mục processed_data_extractive.
+
+train_bert.py: Chạy file này để huấn luyện mô hình. Kết quả sẽ lưu vào folder my_finetuned_vimmrc.
+
+2. Hướng ViT5 (Generative)
+preprocess_for_training(vit5).py: Tương tự, chạy để xử lý dữ liệu dành riêng cho cấu trúc Seq2Seq của ViT5.
+
+train_vit5.py: Chạy huấn luyện ViT5. Kết quả sẽ lưu vào folder my_generative_model.
+
+3. Đánh giá
+evaluate_final.py: Sau khi có cả 2 mô hình đã train, chạy file này để lấy các chỉ số EM (Exact Match) và F1-score để đưa vào báo cáo đồ án.
+
+Giai đoạn 3: Kết nối hệ thống & Chạy Demo (Inference)
+Đây là lúc bạn lắp ghép các mảnh lại với nhau.
+
+retriever.py: File này sẽ kết nối với bm25_index.pkl để làm nhiệm vụ "đi tìm đoạn văn".
+
+reader_extractive.py: Load mô hình từ folder my_finetuned_vimmrc để trích xuất câu trả lời.
+
+reader.py: Load mô hình ViT5 từ folder my_generative_model để sinh câu trả lời.
+
+pipeline.py: Đây là "nhạc trưởng". Nó sẽ gọi retriever trước, sau đó đẩy kết quả qua reader để ra câu trả lời cuối cùng.
+
+app.py: BƯỚC CUỐI CÙNG. Đây là file khởi tạo giao diện Web (Gradio hoặc Flask).
+ 
 ⚙️ Cài đặt
 1. Clone repo
 git clone https://github.com/thuhoai05/NLP.git
